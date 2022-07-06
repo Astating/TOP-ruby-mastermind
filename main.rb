@@ -2,13 +2,13 @@
 
 module Rules
   OPTIONS = %w[1 2 3 4 5 6].freeze
-  
+
   def self.options
     OPTIONS
   end
 
   def self.valid?(code)
-    code.length == 4 && code.all? { |el| (1..6).include?(el.to_i) }
+    code.length == 4 && code.all? { |el| OPTIONS.include?(el) }
   end
 end
 
@@ -28,10 +28,11 @@ class Game
     @code_maker = nil
     @code_guesser = nil
     mode_selection
+    puts "\n"
     @secret_code = code_maker.choose_code
     @guess = []
     @guess_count = 1
-    start_game
+    play_game
   end
 
   def mode_selection
@@ -40,10 +41,7 @@ class Game
     puts 'Want to leave ? Type 9'
 
     answer = gets.chomp
-    until %w[1 2 9].include?(answer)
-      puts 'Code should be 4 digits long. Use digits between 1 to 6.'
-      answer = gets.chomp
-    end
+    answer = gets.chomp until %w[1 2 9].include?(answer)
 
     case answer
     when '1'
@@ -59,34 +57,66 @@ class Game
     end
   end
 
-  def start_game
+  def play_game
+    puts "\n"
     while guess != secret_code && guess_count <= 12
+      play_turn
+      display_pegs
+      puts "\n"
+    end
+    conclusion
+  end
 
-      puts "guess #{guess_count}/12"
-      loop do
-        @guess = code_guesser.guess_code
-        break if Rules.valid?(guess)
-      end
+  def play_turn
+    puts "guess #{guess_count}/12"
+    loop do
+      @guess = code_guesser.guess_code
+      break if Rules.valid?(guess)
 
-      absolute_check = []
-      relative_check = []
-      guess.each_with_index do |digit, index|
-        next unless secret_code.include?(digit)
+      puts 'Code should be 4 digits long. Use digits between 1 to 6.'
+    end
+    @guess_count += 1
+  end
 
-        if digit == secret_code[index]
-          absolute_check.push('o')
-        else
-          relative_check.push('~')
-        end
-      end
-      @guess_count += 1
-      puts "#{guess.join('')}\t#{(absolute_check + relative_check).join('')}"
+  def display_pegs
+    absolute_check = []
+    relative_check = []
+    code_to_check = secret_code.slice(0..-1)
+    unguessed = guess[0..-1]
+
+    unguessed.each_with_index do |digit, index|
+      next unless code_to_check.include?(digit)
+
+      next unless digit == code_to_check[index]
+
+      absolute_check.push('o')
+      code_to_check[index] = 'checked'
+      unguessed[index] = 'assigned'
+    end
+
+    unguessed.each_with_index do |digit, index|
+      next unless code_to_check.include?(digit)
+
+      relative_check.push('~')
+      i = code_to_check.index(digit)
+      code_to_check[i] = 'checked'
+      unguessed[index] = 'assigned'
+    end
+
+    puts "#{guess.join('')}\t#{(absolute_check + relative_check).join('')}"
+  end
+
+  def conclusion
+    if guess == secret_code
+      puts "#{code_guesser.class} has deciphered the code! => #{secret_code.join('')}"
+    else
+      puts "#{code_maker.class}'s code was not deciphered in time... => #{secret_code.join('')}"
     end
   end
 end
 
 class Computer
-  def initialize; end
+  # def initialize; end
 
   def choose_code
     puts 'Computer is thinking...'
@@ -102,13 +132,12 @@ class Computer
 end
 
 class Human
-  def initialize; end
+  # def initialize; end
 
   def choose_code
     puts 'Dear human, choose your secret code.'
     code = []
-    code = gets.chomp.split('') until Rules.valid?(code)
-    code
+    code = gets.chomp.split('')
   end
 
   def guess_code
