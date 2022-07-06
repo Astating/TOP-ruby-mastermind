@@ -72,7 +72,6 @@ class Game
     loop do
       @guess = code_guesser.guess_code
       break if Rules.valid?(guess)
-
       puts 'Code should be 4 digits long. Use digits between 1 to 6.'
     end
     @guess_count += 1
@@ -136,8 +135,11 @@ class Human
 
   def choose_code
     puts 'Dear human, choose your secret code.'
-    code = []
-    code = gets.chomp.split('')
+    loop do
+        code = gets.chomp.split('')
+        return code if Rules.valid?(code)
+        puts 'Code should be 4 digits long. Use digits between 1 to 6.'
+    end
   end
 
   def guess_code
