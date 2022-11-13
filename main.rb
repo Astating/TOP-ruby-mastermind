@@ -58,8 +58,15 @@ class Game
   end
 
   def play_game
-    puts "\n"
-    while guess != secret_code && guess_count <= 12
+    puts <<~RULES
+
+      Hints:
+      o => Right digit, right position !
+      ~ => Right digit, wrong position !
+
+    RULES
+
+      while guess != secret_code && guess_count <= 12
       play_turn
       display_pegs
       puts "\n"
